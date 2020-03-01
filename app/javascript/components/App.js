@@ -60,7 +60,8 @@ class App extends Component {
         console.log(response)
         console.log(response.data)
         const addedFish = response.data
-        const fishes = { ...this.state.fishes, addedFish }
+        const fishes = { ...this.state.fishes }
+        fishes[`fish-${Date.now()}`] = addedFish
         this.setState({ fishes })
       })
   }

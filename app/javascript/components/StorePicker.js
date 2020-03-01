@@ -12,17 +12,17 @@ class StorePicker extends Component {
 
   myInput = React.createRef()
 
-  goToStore(e) {
+  async goToStore(e) {
     e.preventDefault()
     const storeId = this.myInput.current.value
     console.log(`Going to ${storeId}`)
-    this.props.history.push(`/store/${storeId}`)
-    axios.post('/v1/stores', { store: {name: storeId} })
-      .then(response => {
-        console.log(response)
-        console.log(response.data)
-      })
-      .catch(error => console.log(error))
+    await axios.post('/v1/stores', { store: {name: storeId} })
+    .then(response => {
+      console.log(response)
+      console.log(response.data)
+    })
+    .catch(error => console.log(error))
+    await this.props.history.push(`/store/${storeId}`)
   }
 
   render() {
