@@ -13,13 +13,18 @@ class App extends Component {
     order: {},
     storeId: {},
   }
-  
-  componentWillMount(){
-    
-  }
 
   async componentDidMount(){
+    const localStorageRef = localStorage.getItem(`order-${this.props.match.params.storeId}`)
+    console.log(localStorageRef)
+    if (localStorageRef) {
+      this.setState({
+        order: JSON.parse(localStorageRef)
+      })
+    }
+
     passCsrfToken(document, axios)
+
     await axios.get('/v1/stores.json')
       .then((response) => {
         const store = response.data.filter(store => store.name === this.props.match.params.storeId)
@@ -30,10 +35,12 @@ class App extends Component {
       })
     await axios.get('/v1/fishes.json')
       .then((response) => {
-        const fishes = response.data.filter(fish => fish.store_id === this.state.storeId)
+        console.log(response)
+        const fishes = { ...response.data.filter(fish => fish.store_id === this.state.storeId) }
         console.log(fishes)
         this.setState({ fishes })
       })
+
 
     // async function fetchFish() {
     //   const res = await fetch(`/v1/fishes`)
@@ -43,9 +50,11 @@ class App extends Component {
     // }
   }
 
+  UNSAFE_componentWillUpdate(nextProps, nextState) {
+    localStorage.setItem(`order-${this.props.match.params.storeId}`, JSON.stringify(nextState.order))
+  }
+
   addFish = fish => {
-    console.log(fish)
-    // const fishObject = fish[`fish-${Date.now()}`] { fish }
     axios.post('/v1/fishes', {fish})
       .then(response => {
         console.log(response)
@@ -85,10 +94,50 @@ class App extends Component {
     this.setState({ fishes })
   }
 
-  addToOrder = (key) => {
+  addToOrder = (fish) => {
+    console.log(fish.id)
     const order = { ...this.state.order };
-    order[key] = order[key] + 1 || 1;
+    order[fish.id] = order[fish.id] + 1 || 1;
     this.setState({ order })
+  }
+
+  removeFromOrder = (fish) => {
+    const order = {...this.state.order}
+    delete order[fish.id]
+    this.setState({ order })
+  }
+
+  changeOrderQty = (fish, increment) => {
+    const order = { ...this.state.order }
+    if (increment) {
+      order[fish.id]++
+    } else {
+      order[fish.id]--
+      if (order[fish.id] === 0) {
+        console.log(order[fish.id])
+        delete order[fish.id]
+      }
+    }
+    this.setState({ order })
+  }
+
+  checkout = () => {
+    const order = Object.entries(this.state.order)
+    const fishes = Object.values(this.state.fishes)
+    const runningOrder = []
+    order.forEach(item => {
+      const [ orderId, orderQty ] = item
+      const availableFish = fishes.find(fish => fish.id === Number(orderId) && fish.status === 'available')
+      if (!availableFish) { return; }
+      const { id, name, price } = availableFish
+      const totalPrice = orderQty * Number(price)
+      runningOrder.push({ id, name, price, orderQty, totalPrice })
+    })
+    const orderTotal = runningOrder.reduce((prevTotal, item) => {
+      return prevTotal + item.totalPrice
+    }, 0)
+    console.log(runningOrder)
+    console.log(orderTotal)
   }
   
   render() {
@@ -107,7 +156,14 @@ class App extends Component {
             ))}
           </ul>
         </div>
-        <Order/>
+        <Order
+          fishes={this.state.fishes}
+          order={this.state.order}
+          params={this.state.params}
+          removeFromOrder={this.removeFromOrder}
+          changeOrderQty={this.changeOrderQty}
+          checkout={this.checkout}
+        />
         <Inventory 
           addFish={this.addFish}
           removeFish={this.removeFish}

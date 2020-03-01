@@ -16,7 +16,7 @@ class Fish extends Component {
         <h3 className="fish-name">{details.name}</h3>
         <span className="price">{formatPrice(details.price)}</span>
         <p>{details.desc}</p>
-        <button onClick={() => this.props.addToOrder(index)} disabled={!isAvailable}>{buttonText}</button>
+        <button onClick={() => this.props.addToOrder(details)} disabled={!isAvailable}>{buttonText}</button>
       </li>
     )
   }
